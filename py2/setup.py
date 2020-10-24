@@ -19,10 +19,11 @@ def longDescription():
 
 
 # __version__ = get_version('unisos/icm/__init__.py')
-__version__ = '0.13'
+__version__ = '0.1'
 
 
 requires = [
+    'python-gitlab',
     'unisos.icm',
     'bisos.common',
     'blee.icmPlayer',
@@ -33,15 +34,12 @@ requires = [
 # print('Requirements: %s' % ','.join(requires))
 
 scripts = [
-    "./bin/bx-bases",
-    "./bin/bx-pip",
-    "./bin/bx-isoSrBases.py",
-    "./bin/bx-gitReposBases",
+    "./bin/bxoGitlab.py",
 ]
 
 
 setuptools.setup(
-    name='bisos.bx-bases',
+    name='bisos.bxoGitlab',
     version=__version__,
     namespace_packages=['bisos'],
     packages=setuptools.find_packages(),
