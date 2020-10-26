@@ -63,9 +63,12 @@ icmInfo = {
 ####+END:
 
 import sys
-#import os
+import os
 
-#import collections
+import collections
+import enum
+
+import gitlab
 
 ####+BEGIN: bx:dblock:global:file-insert :file "/libre/ByStar/InitialTemplates/update/sw/icm/py/importUcfIcmBleepG.py"
 from unisos import ucf
@@ -305,6 +308,11 @@ class examples(icm.Cmnd):
         logControler = icm.LOG_Control()
         logControler.loggerSetLevel(20)
 
+        def cpsInit(): return collections.OrderedDict()
+        def menuItem(verbosity): icm.ex_gCmndMenuItem(cmndName, cps, cmndArgs, verbosity=verbosity,
+                                 comment='none', icmWrapper=None, icmName=None) # verbosity: 'little' 'basic' 'none'
+        def execLineEx(cmndStr): icm.ex_gExecMenuItem(execLine=cmndStr)
+        
         icm.icmExampleMyName(G.icmMyName(), G.icmMyFullName())
         
         icm.G_commonBriefExamples()    
@@ -318,8 +326,22 @@ class examples(icm.Cmnd):
 """
 ####+END:
         
-        serviceObject.examples_bxoSrBaseDir()
-  
+        #serviceObject.examples_bxoSrBaseDir()
+
+        icm.cmndExampleMenuChapter('*Gitlab Features*')
+
+        cmndName = "acctCreate" ; cmndArgs = ""
+        cps=cpsInit() ; cps['bxoId'] = 'as-bisos'
+        menuItem(verbosity='little')
+
+        cmndName = "reposList" ; cmndArgs = ""
+        cps=cpsInit() ; cps['bxoId'] = 'as-bisos'
+        menuItem(verbosity='little')
+
+        cmndName = "reposCreate" ; cmndArgs = ""
+        cps=cpsInit() ; cps['bxoId'] = 'as-bisos'
+        menuItem(verbosity='little')
+        
         return(cmndOutcome)
 
     def cmndDocStr(self): return """
@@ -331,19 +353,421 @@ class examples(icm.Cmnd):
 *  [[elisp:(beginning-of-buffer)][Top]] ################ [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]    *ICM Commands*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
 """
 ####+END:
+
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "acctCreate" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
 """
-*       /Empty/  [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(org-cycle)][| ]]
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /acctCreate/ parsMand=bxoId parsOpt= argsMin=0 argsMax=0 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
 """
+class acctCreate(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+
+        callParamsDict = {'bxoId': bxoId, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+
+####+END:
+
+        bxoRoot = bxoRootDir_obtain(
+            bxoId=bxoId,
+        ) 
+
+        bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
+
+        bxeType = icm.FILE_ParamValueReadFrom(
+            parRoot=os.path.abspath(bxeDescRoot),
+            parName="bxeType"
+        )
+
+        selectedSiteRoot = usgSitesSelectedDir_obtain(usgAcct=None)
+        gitServerInfo = os.path.join(selectedSiteRoot, "gitServerInfo")
+
+        gitServerUrl = icm.FILE_ParamValueReadFrom(parRoot=gitServerInfo, parName="gitServerUrl")
+        gitServerPrivToken = icm.FILE_ParamValueReadFrom(parRoot=gitServerInfo, parName="gitServerPrivToken")        
+        
+        # gl = gitlab.Gitlab.from_config('bisosAdmin', ['/bxo/usg/bystar/.python-gitlab.cfg'])            
+        # private token or personal token authentication
+        # gl = gitlab.Gitlab('http://192.168.0.56', private_token='qji9-_YqoqzZ4Rymk_qG')
+        
+        gl = gitlab.Gitlab(gitServerUrl, private_token=gitServerPrivToken)        
+
+        users = gl.users.list(search=bxoId)
+
+        if users:
+            icm.ANN_write("Acct Already Exists -- users={}".format(users))
+            user = users[0]
+        else:
+            bxeOid = icm.FILE_ParamValueReadFrom(bxeDescRoot, parName='bxeOid')
+            AdminContactEmail = icm.FILE_ParamValueReadFrom(bxeDescRoot, parName='AdminContactEmail')                                                 
+            passwd = 'somePassword'
+            acctName = "oid-" + bxeOid 
+            
+            user = gl.users.create({
+                'email': AdminContactEmail,
+                'password': passwd,
+                'username': bxoId,
+                'name': acctName,
+            })
+
+        keys = user.keys.list()
+
+        if keys:
+            icm.ANN_write("Key Already Exists -- keys={}".format(keys))
+            key = keys[0]
+        else:
+            sshRsaPubFile = os.path.join(
+                bxoRoot,
+                'credentials/ssh/id_rsa.pub',
+            )
+            
+            key = user.keys.create({
+                'title': bxoId + '-key',
+                'key': open(sshRsaPubFile).read()
+            })
+
+
+        if interactive:
+            #icm.ANN_write("{}".format(bxoRoot))
+            #icm.ANN_write("{}".format(bxeDescRoot))
+            #icm.ANN_write("{}".format(bxeType))
+            #icm.ANN_write("{}".format(selectedSiteRoot))                                    
+            print(key)
+            print(user)
+        
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=None,
+        )
+
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
+"""
+
+
+
+
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "reposList" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /reposList/ parsMand=bxoId parsOpt= argsMin=0 argsMax=0 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+"""
+class reposList(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+
+        callParamsDict = {'bxoId': bxoId, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+
+####+END:
+
+        bxoRoot = bxoRootDir_obtain(bxoId)
+        bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
+
+        gl = bxoGitlab_connect(bxoId)
+
+        users = gl.users.list(search=bxoId)
+
+        if users:
+            icm.ANN_write("Acct Already Exists -- users={}".format(users))
+            user = users[0]
+        else:
+            icm.EH_problem_usageError("Missing user -- {}".format(bxoId))
+            return
+
+        if interactive:
+            print(user)
+        
+        # list all the projects
+        projects = gl.projects.list(sudo=bxoId)
+        for project in projects:
+            print(project.name)
+
+        #project = gl.projects.get(1)
+        #print(project.attributes)
+
+        # If you have the administrator status, you can use sudo to act as another user. For example:
+        # p = gl.projects.create({'name': 'awesome_project'}, sudo='user1')
+        
+        
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=None,
+        )
+
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
+"""
+
+
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "reposCreate" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /reposCreate/ parsMand=bxoId parsOpt= argsMin=0 argsMax=0 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+"""
+class reposCreate(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+
+        callParamsDict = {'bxoId': bxoId, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+
+####+END:
+
+        bxoRoot = bxoRootDir_obtain(bxoId)
+        bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
+
+        gl = bxoGitlab_connect(bxoId)
+
+        users = gl.users.list(search=bxoId)
+
+        if users:
+            icm.ANN_write("Acct Already Exists -- users={}".format(users))
+            user = users[0]
+        else:
+            icm.EH_problem_usageError("Missing user -- {}".format(bxoId))
+            return
+
+        if interactive:
+            print(user)
+        
+ 
+        # If you have the administrator status, you can use sudo to act as another user.
+        bxeDesc_repo = gl.projects.create(
+            {
+            'name': 'bxeDesc'
+            },
+            sudo=bxoId,
+        )
+
+        print(bxeDesc_repo.attributes)
+        
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=None,
+        )
+
+
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
+"""
+
+
 
 ####+BEGIN: bx:icm:python:section :title "Supporting Classes And Functions"
 """
 *  [[elisp:(beginning-of-buffer)][Top]] ################ [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]    *Supporting Classes And Functions*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
 """
 ####+END:
+
+####+BEGIN: bx:dblock:python:func :funcName "bxoGitlab_connect" :funcType "Obtain" :retType "str" :deco "" :argsList "bxoId"
 """
-*       /Empty/  [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(org-cycle)][| ]]
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Func-Obtain    :: /bxoGitlab_connect/ retType=str argsList=(bxoId)  [[elisp:(org-cycle)][| ]]
 """
-    
+def bxoGitlab_connect(
+    bxoId,
+):
+####+END:
+    """
+** Obtain a handle for the gitlab class.
+"""
+    bxoRoot = bxoRootDir_obtain(
+        bxoId=bxoId,
+    ) 
+
+    bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
+
+    selectedSiteRoot = usgSitesSelectedDir_obtain(usgAcct=None)
+    gitServerInfo = os.path.join(selectedSiteRoot, "gitServerInfo")
+
+    gitServerUrl = icm.FILE_ParamValueReadFrom(
+        parRoot=gitServerInfo,
+        parName="gitServerUrl"
+    )
+    gitServerPrivToken = icm.FILE_ParamValueReadFrom(
+        parRoot=gitServerInfo,
+        parName="gitServerPrivToken"
+    )        
+    gl = gitlab.Gitlab(gitServerUrl, private_token=gitServerPrivToken)        
+
+    return gl
+
+
+####+BEGIN: bx:dblock:python:section :title "Directory Base Locations"
+"""
+*  [[elisp:(beginning-of-buffer)][Top]] ################ [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]    *Directory Base Locations*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
+"""
+####+END:
+
+####+BEGIN: bx:dblock:python:subSection :title "Bxo Roots And InfoBases"
+"""
+*  [[elisp:(beginning-of-buffer)][Top]] ================ [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]          *Bxo Roots And InfoBases*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
+"""
+####+END:
+
+####+BEGINNOT: bx:dblock:python:enum :enumName "bxo_IdType" :comment ""
+"""
+*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children)][|V]] [[elisp:(org-tree-to-indirect-buffer)][|>]] [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(beginning-of-buffer)][Top]] [[elisp:(delete-other-windows)][(1)]] || Enum           :: /bxo_IdType/  [[elisp:(org-cycle)][| ]]
+"""
+#@enum.unique
+class bxo_IdType(enum.Enum):
+####+END:
+    foreignBxO = 'foreignBxO'
+    nativeBxO = 'nativeBxO'
+    bystarId = 'bystarId'
+
+
+####+BEGIN: bx:dblock:python:func :funcName "bxoIdType_obtain" :funcType "Obtain" :retType "str" :deco "" :argsList "bxoId"
+"""
+*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(org-tree-to-indirect-buffer)][|>]] [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(beginning-of-buffer)][Top]] [[elisp:(delete-other-windows)][(1)]] || Func-Obtain    :: /bxoIdType_obtain/ retType=str argsList=(bxoId)  [[elisp:(org-cycle)][| ]]
+"""
+def bxoIdType_obtain(
+    bxoId,
+):
+####+END:
+    """
+** ea-NUM means old ByStarUid, A pure number means nativeSO. nonNumber means foreignBxO
+"""
+    # return bxo_IdType.foreignBxO
+    return bxo_IdType.nativeBxO
+
+
+####+BEGIN: bx:dblock:python:func :funcName "bxoRootDir_obtain" :funcType "Obtain" :retType "str" :deco "" :argsList "bxoId"
+"""
+*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(org-tree-to-indirect-buffer)][|>]] [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(beginning-of-buffer)][Top]] [[elisp:(delete-other-windows)][(1)]] || Func-Obtain    :: /bxoRootDir_obtain/ retType=str argsList=(bxoId)  [[elisp:(org-cycle)][| ]]
+"""
+def bxoRootDir_obtain(
+    bxoId,
+):
+####+END:
+    """
+** 
+"""
+    bxoBaseDir = None
+    idType = bxoIdType_obtain(bxoId)
+
+    if idType == bxo_IdType.foreignBxO:
+        bxoBaseDir = os.path.join(
+            bxPlatformConfig.rootDir_foreignBxo_fpObtain(configBaseDir=None,),
+            bxoId,
+        )
+    elif idType == bxo_IdType.nativeBxO:
+        bxoBaseDir = os.path.expanduser("~" +  bxoId)
+
+    elif idType == bxo_IdType.bystarId:
+        pass
+    else:
+        icm.EH_problem_usageError("")
+
+    return bxoBaseDir
+
+
+####+BEGIN: bx:dblock:python:subSection :title "Bxo+Sr Roots and InfoBases (Control/Input)"
+"""
+*  [[elisp:(beginning-of-buffer)][Top]] ================ [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]          *Bxo+Sr Roots and InfoBases (Control/Input)*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
+"""
+####+END:
+
+
+####+BEGIN: bx:dblock:python:func :funcName "bxo_bxeDescRootDir_obtain" :funcType "Obtain" :retType "str" :deco "" :argsList "bxoBaseDir"
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Func-Obtain    :: /bxo_bxeDescRootDir_obtain/ retType=str argsList=(bxoBaseDir)  [[elisp:(org-cycle)][| ]]
+"""
+def bxo_bxeDescRootDir_obtain(
+    bxoBaseDir,
+):
+####+END:
+    """
+** 
+"""
+    return (
+        os.path.join(
+            bxoBaseDir,
+            "bxeDesc",
+        )
+    )
+
+
+####+BEGIN: bx:dblock:python:func :funcName "usgSitesSelectedDir_obtain" :funcType "Obtain" :retType "str" :deco "" :argsList "usgAcct=None"
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Func-Obtain    :: /usgSitesSelectedDir_obtain/ retType=str argsList=(usgAcct=None)  [[elisp:(org-cycle)][| ]]
+"""
+def usgSitesSelectedDir_obtain(
+    usgAcct=None,
+):
+####+END:
+    """
+** 
+"""
+    if usgAcct:
+        usgAcctBase=os.path.expanduser("~" + usgAcct)
+    else:
+        usgAcctBase=os.path.expanduser("~")
+        
+    usgSitesSelectedDir = os.path.join(
+        usgAcctBase,
+        "bisos/sites/selected"
+    )
+
+    return usgSitesSelectedDir
+
+
 ####+BEGIN: bx:icm:python:section :title "Common/Generic Facilities -- Library Candidates"
 """
 *  [[elisp:(beginning-of-buffer)][Top]] ################ [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]    *Common/Generic Facilities -- Library Candidates*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
