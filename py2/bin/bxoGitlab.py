@@ -386,10 +386,6 @@ class acctCreate(icm.Cmnd):
 
         bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
 
-        bxeType = icm.FILE_ParamValueReadFrom(
-            parRoot=os.path.abspath(bxeDescRoot),
-            parName="bxeType"
-        )
 
         selectedSiteRoot = usgSitesSelectedDir_obtain(usgAcct=None)
         gitServerInfo = os.path.join(selectedSiteRoot, "gitServerInfo")
@@ -491,8 +487,8 @@ class reposList(icm.Cmnd):
 
 ####+END:
 
-        bxoRoot = bxoRootDir_obtain(bxoId)
-        bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
+        # bxoRoot = bxoRootDir_obtain(bxoId)
+        # bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
 
         gl = bxoGitlab_connect(bxoId)
 
@@ -579,8 +575,12 @@ class reposCreate(icm.Cmnd):
 
         if interactive:
             print(user)
-        
- 
+
+        bxeType = icm.FILE_ParamValueReadFrom(
+            parRoot=os.path.abspath(bxeDescRoot),
+            parName="bxeType"
+        )
+
         # If you have the administrator status, you can use sudo to act as another user.
         bxeDesc_repo = gl.projects.create(
             {
@@ -627,11 +627,6 @@ def bxoGitlab_connect(
     """
 ** Obtain a handle for the gitlab class.
 """
-    bxoRoot = bxoRootDir_obtain(
-        bxoId=bxoId,
-    ) 
-
-    bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
 
     selectedSiteRoot = usgSitesSelectedDir_obtain(usgAcct=None)
     gitServerInfo = os.path.join(selectedSiteRoot, "gitServerInfo")
