@@ -269,6 +269,28 @@ def g_argsExtraSpecify(
         argparseLongOpt='--version',
     )
 
+    icmParams.parDictAdd(
+        parName='outFile',
+        parDescription="Output File Name",
+        parDataType=None,
+        parDefault=None,
+        parChoices=list(),
+        parScope=icm.ICM_ParamScope.TargetParam,
+        argparseShortOpt=None,
+        argparseLongOpt='--outFile',
+    )
+
+    icmParams.parDictAdd(
+        parName='keyName',
+        parDescription="Name Of The SSH Key",
+        parDataType=None,
+        parDefault=None,
+        parChoices=list(),
+        parScope=icm.ICM_ParamScope.TargetParam,
+        argparseShortOpt=None,
+        argparseLongOpt='--keyName',
+    )
+    
     bleep.commonParamsSpecify(icmParams)    
     
     serviceObject.commonParamsSpecify(icmParams)
@@ -325,21 +347,39 @@ class examples(icm.Cmnd):
 **   [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]          *Imported: bxPlatformBaseDirs*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
 """
 ####+END:
+
+        oneBxoId='as-bisos'
+        oneBxoRoot = bxoRootDir_obtain(bxoId=oneBxoId) 
+        oneKeyPath = os.path.join(oneBxoRoot, 'credentials/priv/ssh/id_rsa.pub')
+        oneKeyName = 'priv-key'
+        oneSnapshotOutFile = '/tmp/git-' + oneBxoId + '-iso.tar'
         
         #serviceObject.examples_bxoSrBaseDir()
 
-        icm.cmndExampleMenuChapter('*Gitlab Features*')
+        icm.cmndExampleMenuChapter('*Gitlab BxE Realization -- Create Account*')
 
         cmndName = "acctCreate" ; cmndArgs = ""
-        cps=cpsInit() ; cps['bxoId'] = 'as-bisos'
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId
         menuItem(verbosity='little')
 
+        cmndName = "pubkeyUpload" ; cmndArgs = oneKeyPath
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId ; cps['keyName'] = oneKeyName
+        menuItem(verbosity='little')
+        
+        icm.cmndExampleMenuChapter('*Gitlab BxE Realization -- Create Repos*')        
+        
         cmndName = "reposList" ; cmndArgs = ""
-        cps=cpsInit() ; cps['bxoId'] = 'as-bisos'
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId
         menuItem(verbosity='little')
 
-        cmndName = "reposCreate" ; cmndArgs = ""
-        cps=cpsInit() ; cps['bxoId'] = 'as-bisos'
+        cmndName = "reposCreate" ; cmndArgs = "iso"
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId
+        menuItem(verbosity='little')
+
+        icm.cmndExampleMenuChapter('*Gitlab BxE Construction -- Take A Snapshot Of Repo*')        
+        
+        cmndName = "repoSnapshot" ; cmndArgs = "iso"
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId ; cps['outFile'] = oneSnapshotOutFile
         menuItem(verbosity='little')
         
         return(cmndOutcome)
@@ -386,7 +426,6 @@ class acctCreate(icm.Cmnd):
 
         bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
 
-
         selectedSiteRoot = usgSitesSelectedDir_obtain(usgAcct=None)
         gitServerInfo = os.path.join(selectedSiteRoot, "gitServerInfo")
 
@@ -397,13 +436,26 @@ class acctCreate(icm.Cmnd):
         # private token or personal token authentication
         # gl = gitlab.Gitlab('http://192.168.0.56', private_token='qji9-_YqoqzZ4Rymk_qG')
         
-        gl = gitlab.Gitlab(gitServerUrl, private_token=gitServerPrivToken)        
+        gitlab = gitlab.Gitlab(gitServerUrl, private_token=gitServerPrivToken)        
 
-        users = gl.users.list(search=bxoId)
+        user = None
+        users = gitlab.users.list(search=bxoId)
 
+        
         if users:
             icm.ANN_write("Acct Already Exists -- users={}".format(users))
-            user = users[0]
+
+            for eachUser in users:
+                if eachUser.name == bxoId:
+                    user = eachUser
+                    break
+
+            if not user:
+                icm.EH_problem_usageError("Missing user bxoId={}".format(bxoId))
+                return cmndOutcome.set(
+                    opError=icm.OpError.Failure,
+                    opResults=None,
+                )
         else:
             bxeOid = icm.FILE_ParamValueReadFrom(bxeDescRoot, parName='bxeOid')
             # AdminContactEmail = icm.FILE_ParamValueReadFrom(bxeDescRoot, parName='AdminContactEmail')
@@ -425,35 +477,14 @@ class acctCreate(icm.Cmnd):
 
         print("Activating User")
         user.activate()
-            
-        keys = user.keys.list()
-
-        if keys:
-            icm.ANN_write("Key Already Exists -- keys={}".format(keys))
-            key = keys[0]
-        else:
-            sshRsaPubFile = os.path.join(
-                bxoRoot,
-                'credentials/ssh/id_rsa.pub',
-            )
-            
-            key = user.keys.create({
-                'title': bxoId + '-key',
-                'key': open(sshRsaPubFile).read()
-            })
-
 
         if interactive:
             #icm.ANN_write("{}".format(bxoRoot))
-            #icm.ANN_write("{}".format(bxeDescRoot))
-            #icm.ANN_write("{}".format(bxeType))
-            #icm.ANN_write("{}".format(selectedSiteRoot))                                    
-            print(key)
-            print(user)
+            print(user.name)
         
         return cmndOutcome.set(
             opError=icm.OpError.Success,
-            opResults=None,
+            opResults=user,
         )
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
@@ -469,77 +500,58 @@ class acctCreate(icm.Cmnd):
 
 
 
-####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "pubkeyUpload" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "pubkeyUpload" :comment "" :parsMand "bxoId keyName" :parsOpt "" :argsMin "1" :argsMax "1" :asFunc "" :interactiveP ""
 """
-*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /pubkeyUpload/ parsMand=bxoId parsOpt= argsMin=0 argsMax=0 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /pubkeyUpload/ parsMand=bxoId keyName parsOpt= argsMin=1 argsMax=1 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
 """
 class pubkeyUpload(icm.Cmnd):
-    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsMandatory = [ 'bxoId', 'keyName', ]
     cmndParamsOptional = [ ]
-    cmndArgsLen = {'Min': 0, 'Max': 0,}
+    cmndArgsLen = {'Min': 1, 'Max': 1,}
 
     @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
     def cmnd(self,
         interactive=False,        # Can also be called non-interactively
         bxoId=None,         # or Cmnd-Input
+        keyName=None,         # or Cmnd-Input
+        argsList=[],         # or Args-Input
     ):
         cmndOutcome = self.getOpOutcome()
         if interactive:
             if not self.cmndLineValidate(outcome=cmndOutcome):
                 return cmndOutcome
+            effectiveArgsList = G.icmRunArgsGet().cmndArgs
+        else:
+            effectiveArgsList = argsList
 
-        callParamsDict = {'bxoId': bxoId, }
+        callParamsDict = {'bxoId': bxoId, 'keyName': keyName, }
         if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
             return cmndOutcome
         bxoId = callParamsDict['bxoId']
+        keyName = callParamsDict['keyName']
 
+        cmndArgsSpecDict = self.cmndArgsSpec()
+        if not self.cmndArgsValidate(effectiveArgsList, cmndArgsSpecDict, outcome=cmndOutcome):
+            return cmndOutcome
 ####+END:
 
-        bxoRoot = bxoRootDir_obtain(bxoId=bxoId) 
-        bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
-        
-        gl = bxoGitlab_connect(bxoId)
+        cmndArgs = self.cmndArgsGet("0&9999", cmndArgsSpecDict, effectiveArgsList)
 
-        users = gl.users.list(search=bxoId)
+        keyPath=cmndArgs[0]
 
-        if users:
-            icm.ANN_write("Acct Already Exists -- users={}".format(users))
-            user = users[0]
-        else:
-            icm.EH_problem_usageError("Missing user -- {}".format(bxoId))
-            return
+        gitlab = bxoGitlab_connect(bxoId)
 
-        if interactive:
-            print(user)
-
-        keys = user.keys.list()
-
-        if keys:
-            icm.ANN_write("Key Already Exists -- keys={}".format(keys))
-            key = keys[0]
-        else:
-            sshRsaPubFile = os.path.join(
-                bxoRoot,
-                'credentials/ssh/id_rsa.pub',
-            )
-            
-            key = user.keys.create({
-                'title': bxoId + '-key',
-                'key': open(sshRsaPubFile).read()
-            })
-
-
+        key = keyUploadForBxo(gitlab, bxoId, keyName, keyPath)
+        if not key:
+            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+  
         if interactive:
             #icm.ANN_write("{}".format(bxoRoot))
-            #icm.ANN_write("{}".format(bxeDescRoot))
-            #icm.ANN_write("{}".format(bxeType))
-            #icm.ANN_write("{}".format(selectedSiteRoot))                                    
             print(key)
-            print(user)
         
         return cmndOutcome.set(
             opError=icm.OpError.Success,
-            opResults=None,
+            opResults=key,
         )
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
@@ -582,9 +594,9 @@ class reposList(icm.Cmnd):
 
 ####+END:
 
-        gl = bxoGitlab_connect(bxoId)
+        gitlab = bxoGitlab_connect(bxoId)
 
-        user = getUserForBxo(gl, bxoId)
+        user = getUserForBxo(gitlab, bxoId)
         if not user:
             return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
 
@@ -647,16 +659,14 @@ class reposCreate(icm.Cmnd):
 
         cmndArgs = self.cmndArgsGet("0&9999", cmndArgsSpecDict, effectiveArgsList)
 
-        # bxoRoot = bxoRootDir_obtain(bxoId)
-        # bxeDescRoot = bxo_bxeDescRootDir_obtain(bxoRoot)
+        gitlab = bxoGitlab_connect(bxoId)
 
-        gl = bxoGitlab_connect(bxoId)
-
-        user = getUserForBxo(gl, bxoId)
+        user = getUserForBxo(gitlab, bxoId)
         if not user:
             return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
 
-        # example code fragment
+        # example code fragment:
+        
         # bxeType = icm.FILE_ParamValueReadFrom(
         #     parRoot=os.path.abspath(bxeDescRoot),
         #     parName="bxeType"
@@ -664,20 +674,20 @@ class reposCreate(icm.Cmnd):
 
         def processEachArg(eachArg,):
             # If you have the administrator status, you can use sudo to act as another user.
-            bxeDesc_repo = gl.projects.create(
+            project = gitlab.projects.create(
                 {
-                    'name': eachArg,
+                'name': eachArg,
                 },
                 sudo=bxoId,
             )
-            print(bxeDesc_repo.attributes)
+            print(project.name)
 
         for eachArg in cmndArgs:
             processEachArg(eachArg)                        
 
         return cmndOutcome.set(
             opError=icm.OpError.Success,
-            opResults=None,
+            opResults=project,
         )
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndArgsSpec" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
@@ -714,14 +724,178 @@ class reposCreate(icm.Cmnd):
 """
 
 
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "repoSnapshot" :comment "" :parsMand "bxoId outFile" :parsOpt "" :argsMin "1" :argsMax "1" :asFunc "" :interactiveP ""
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /repoSnapshot/ parsMand=bxoId outFile parsOpt= argsMin=1 argsMax=1 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+"""
+class repoSnapshot(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', 'outFile', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 1, 'Max': 1,}
 
-    
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+        outFile=None,         # or Cmnd-Input
+        argsList=[],         # or Args-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+            effectiveArgsList = G.icmRunArgsGet().cmndArgs
+        else:
+            effectiveArgsList = argsList
+
+        callParamsDict = {'bxoId': bxoId, 'outFile': outFile, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+        outFile = callParamsDict['outFile']
+
+        cmndArgsSpecDict = self.cmndArgsSpec()
+        if not self.cmndArgsValidate(effectiveArgsList, cmndArgsSpecDict, outcome=cmndOutcome):
+            return cmndOutcome
+####+END:
+
+        cmndArgs = self.cmndArgsGet("0&9999", cmndArgsSpecDict, effectiveArgsList)
+
+        repoName = cmndArgs[0]
+        
+        gitlab = bxoGitlab_connect(bxoId)
+
+        thisRepo = getRepoOfBxo(gitlab, bxoId, repoName)
+        if not thisRepo:
+            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+
+        tarFile = thisRepo.snapshot()
+
+        f = open(outFile, "w")
+        f.write(tarFile)
+        f.close()            
+            
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=None,
+        )
+
+####+BEGIN: bx:icm:python:method :methodName "cmndArgsSpec" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndArgsSpec/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndArgsSpec(self):
+####+END:        
+        """
+***** Cmnd Args Specification  -- Each As Any.
+"""
+        cmndArgsSpecDict = icm.CmndArgsSpecDict()
+        cmndArgsSpecDict.argsDictAdd(
+            argPosition="0&9999",
+            argName="cmndArgs",
+            argChoices=[],
+            argDescription="List Of CmndArgs To Be Processed. Each As Any."
+        )
+
+        return cmndArgsSpecDict
+
+
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
+"""
 
 ####+BEGIN: bx:icm:python:section :title "Supporting Classes And Functions"
 """
 *  [[elisp:(beginning-of-buffer)][Top]] ############## [[elisp:(blee:ppmm:org-mode-toggle)][Nat]] [[elisp:(delete-other-windows)][(1)]]    *Supporting Classes And Functions*  [[elisp:(org-cycle)][| ]]  [[elisp:(org-show-subtree)][|=]] 
 """
 ####+END:
+
+
+####+BEGIN: bx:dblock:python:func :funcName "keyUploadForBxo" :funcType "Obtain" :retType "str" :deco "" :argsList "gitlab bxoId keyName keyPath"
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Func-Obtain    :: /keyUploadForBxo/ retType=str argsList=(gitlab bxoId keyName keyPath)  [[elisp:(org-cycle)][| ]]
+"""
+def keyUploadForBxo(
+    gitlab,
+    bxoId,
+    keyName,
+    keyPath,
+):
+####+END:
+    """
+** Get the gitlab repo (project) based on specified repoName of bxoId.
+"""
+
+    print(keyName)
+    print(keyPath)
+
+    return
+    
+    keys = user.keys.list()
+
+    if keys:
+        icm.ANN_write("Key Already Exists -- keys={}".format(keys))
+        key = keys[0]
+    else:
+        sshRsaPubFile = os.path.join(
+            bxoRoot,
+            'credentials/ssh/id_rsa.pub',
+        )
+            
+        key = user.keys.create({
+            'title': bxoId + '-key',
+            'key': open(sshRsaPubFile).read()
+        })
+
+            
+            
+    project = None
+    projects = gitlab.projects.list(search=repoName, sudo=bxoId)
+    for eachProject in projects:
+        if eachProject.name == repoName:
+            project = eachProject
+            break
+
+    if not project:
+        icm.EH_problem_usageError("Missing repoName={} for bxoId={}".format(repoName, bxoId))
+        
+    return project
+    
+
+
+####+BEGIN: bx:dblock:python:func :funcName "getRepoOfBxo" :funcType "Obtain" :retType "str" :deco "" :argsList "gitlab bxoId repoName"
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Func-Obtain    :: /getRepoOfBxo/ retType=str argsList=(gitlab bxoId repoName)  [[elisp:(org-cycle)][| ]]
+"""
+def getRepoOfBxo(
+    gitlab,
+    bxoId,
+    repoName,
+):
+####+END:
+    """
+** Get the gitlab repo (project) based on specified repoName of bxoId.
+"""
+    project = None
+    projects = gitlab.projects.list(search=repoName, sudo=bxoId)
+    for eachProject in projects:
+        if eachProject.name == repoName:
+            project = eachProject
+            break
+
+    if not project:
+        icm.EH_problem_usageError("Missing repoName={} for bxoId={}".format(repoName, bxoId))
+        
+    return project
+    
 
 ####+BEGIN: bx:dblock:python:func :funcName "getUserForBxo" :funcType "Obtain" :retType "str" :deco "" :argsList "gitlab bxoId"
 """
@@ -736,15 +910,16 @@ def getUserForBxo(
 ** Get the gitlab user associated with the specified bxoId.
 """
 
+    user = None
     users = gitlab.users.list(search=bxoId)
 
-    if users:
-        # icm.ANN_write("Acct Already Exists -- users={}".format(users))
-        user = users[0]
-        # NOTYET, check for name similarities
-    else:
-        icm.EH_problem_usageError("Missing user for bxoId = {}".format(bxoId))
-        user = None
+    for eachUser in users:
+        if eachUser.name == bxoId:
+            user = eachUser
+            break
+
+    if not user:
+        icm.EH_problem_usageError("Missing user bxoId={}".format(bxoId))
         
     return user
 
