@@ -436,11 +436,10 @@ class acctCreate(icm.Cmnd):
         # private token or personal token authentication
         # gl = gitlab.Gitlab('http://192.168.0.56', private_token='qji9-_YqoqzZ4Rymk_qG')
         
-        gitlab = gitlab.Gitlab(gitServerUrl, private_token=gitServerPrivToken)        
+        gl = gitlab.Gitlab(gitServerUrl, private_token=gitServerPrivToken)        
 
         user = None
-        users = gitlab.users.list(search=bxoId)
-
+        users = gl.users.list(search=bxoId)
         
         if users:
             icm.ANN_write("Acct Already Exists -- users={}".format(users))
@@ -484,7 +483,7 @@ class acctCreate(icm.Cmnd):
         
         return cmndOutcome.set(
             opError=icm.OpError.Success,
-            opResults=user,
+            opResults=user.name,
         )
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
@@ -551,7 +550,7 @@ class pubkeyUpload(icm.Cmnd):
         
         return cmndOutcome.set(
             opError=icm.OpError.Success,
-            opResults=key,
+            opResults=key.title,
         )
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
@@ -831,45 +830,37 @@ def keyUploadForBxo(
 ):
 ####+END:
     """
-** Get the gitlab repo (project) based on specified repoName of bxoId.
+** Upload the specified key for bxo.
 """
 
-    print(keyName)
-    print(keyPath)
+    user = getUserForBxo(gitlab, bxoId)
+    if not user:
+        icm.EH_problem_usageError("Missing user={} for bxoId={}".format(user, bxoId))
+        return None
 
-    return
-    
+    keyTitle = bxoId + '-key'
+    key = None
     keys = user.keys.list()
+    
+    for eachKey in keys:
+        if eachKey.title == keyTitle:
+            icm.ANN_write("Key Already Exists -- keys={}".format(keys))            
+            key = eachKey
+            break
 
-    if keys:
-        icm.ANN_write("Key Already Exists -- keys={}".format(keys))
-        key = keys[0]
-    else:
+    if not key:
         sshRsaPubFile = os.path.join(
             bxoRoot,
             'credentials/ssh/id_rsa.pub',
         )
             
         key = user.keys.create({
-            'title': bxoId + '-key',
+            'title': keyTitle,
             'key': open(sshRsaPubFile).read()
         })
 
-            
-            
-    project = None
-    projects = gitlab.projects.list(search=repoName, sudo=bxoId)
-    for eachProject in projects:
-        if eachProject.name == repoName:
-            project = eachProject
-            break
-
-    if not project:
-        icm.EH_problem_usageError("Missing repoName={} for bxoId={}".format(repoName, bxoId))
-        
-    return project
-    
-
+    return key
+                                  
 
 ####+BEGIN: bx:dblock:python:func :funcName "getRepoOfBxo" :funcType "Obtain" :retType "str" :deco "" :argsList "gitlab bxoId repoName"
 """
