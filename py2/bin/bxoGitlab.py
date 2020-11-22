@@ -369,8 +369,16 @@ class examples(icm.Cmnd):
 
         cmndName = "acctList" ; cmndArgs = ""
         cps=cpsInit(); menuItem(verbosity='little')
+
+        cmndName = "acctDelete" ; cmndArgs = ""
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId
+        menuItem(verbosity='little')
         
         icm.cmndExampleMenuChapter('*Gitlab BxE Realization -- Key Upload*')
+
+        cmndName = "pubkeysList" ; cmndArgs = ""
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId
+        menuItem(verbosity='little')
         
         cmndName = "pubkeyObtain" ; cmndArgs = ""
         cps=cpsInit() ; cps['bxoId'] = oneBxoId ; cps['keyName'] = oneKeyName
@@ -384,13 +392,17 @@ class examples(icm.Cmnd):
         cps=cpsInit() ; cps['bxoId'] = oneBxoId ; cps['keyName'] = oneKeyName
         menuItem(verbosity='little')
         
-        icm.cmndExampleMenuChapter('*Gitlab BxE Realization -- Create Repos*')        
+        icm.cmndExampleMenuChapter('*Gitlab Repos -- List, Create and Delete Repos*')        
         
         cmndName = "reposList" ; cmndArgs = ""
         cps=cpsInit() ; cps['bxoId'] = oneBxoId
         menuItem(verbosity='little')
 
         cmndName = "reposCreate" ; cmndArgs = "iso"
+        cps=cpsInit() ; cps['bxoId'] = oneBxoId
+        menuItem(verbosity='little')
+
+        cmndName = "reposDelete" ; cmndArgs = "iso"
         cps=cpsInit() ; cps['bxoId'] = oneBxoId
         menuItem(verbosity='little')
 
@@ -543,10 +555,8 @@ class acctVerify(icm.Cmnd):
 
         return cmndOutcome.set(
             opError=icm.OpError.Success,
-            opResults=user.name,
+            opResults=user.username,
         )
-
-
 
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
@@ -560,6 +570,59 @@ class acctVerify(icm.Cmnd):
 ***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
 """
 
+
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "acctDelete" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /acctDelete/ parsMand=bxoId parsOpt= argsMin=0 argsMax=0 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+"""
+class acctDelete(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+
+        callParamsDict = {'bxoId': bxoId, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+
+####+END:
+
+        gl = bxoGitlab_connect()
+
+        user = getUserForBxo(gl, bxoId)
+        if not user:
+            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+
+        userName=user.username
+
+        user.delete()
+        
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=user.name,
+        )
+
+
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
+"""
 
 
 ####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "acctList" :comment "" :parsMand "" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
@@ -609,6 +672,60 @@ class acctList(icm.Cmnd):
 ***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
 """
 
+
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "pubkeysList" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /pubkeysList/ parsMand=bxoId parsOpt= argsMin=0 argsMax=0 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+"""
+class pubkeysList(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 0, 'Max': 0,}
+
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+
+        callParamsDict = {'bxoId': bxoId, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+
+####+END:
+
+        gl = bxoGitlab_connect()
+
+        user = getUserForBxo(gl, bxoId)
+        if not user:
+            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+
+        keys = user.keys.list()
+    
+        for eachKey in keys:
+            print(eachKey.title)
+
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=None,
+        )
+
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** [[elisp:(org-cycle)][| *CmndDesc:* | ]]  List repos for bxoId.
+"""
+    
     
 
 ####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "pubkeyObtain" :comment "" :parsMand "bxoId keyName" :parsOpt "" :argsMin "0" :argsMax "0" :asFunc "" :interactiveP ""
@@ -888,7 +1005,7 @@ class reposCreate(icm.Cmnd):
             project = getRepoOfBxo(gl, bxoId, eachArg)
             if project:
                 icm.ANN_write("Repo Already Exists -- repoName={}".format(project.name))
-                return project
+                return None
                     
             # If you have the administrator status, you can use sudo to act as another user.
             project = gl.projects.create(
@@ -897,16 +1014,24 @@ class reposCreate(icm.Cmnd):
                 },
                 sudo=bxoId,
             )
+            icm.ANN_write("Created Repo -- repoName={}".format(project.name))            
             print(project.name)
             return project
 
         for eachArg in cmndArgs:
             project = processEachArg(eachArg)                        
 
-        return cmndOutcome.set(
-            opError=icm.OpError.Success,
-            opResults=project.name,
-        )
+        if project:
+            return cmndOutcome.set(
+                opError=icm.OpError.Success,
+                opResults=project.name,
+            )
+        else:
+            return cmndOutcome.set(
+                opError=icm.OpError.Failure,
+                opResults="AlreadyExists",
+            )
+  
 
 ####+BEGIN: bx:icm:python:method :methodName "cmndArgsSpec" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
     """
@@ -941,6 +1066,104 @@ class reposCreate(icm.Cmnd):
 ***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
 """
 
+
+####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "reposDelete" :comment "" :parsMand "bxoId" :parsOpt "" :argsMin "1" :argsMax "9999" :asFunc "" :interactiveP ""
+"""
+*  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  ICM-Cmnd       :: /reposDelete/ parsMand=bxoId parsOpt= argsMin=1 argsMax=9999 asFunc= interactive=  [[elisp:(org-cycle)][| ]]
+"""
+class reposDelete(icm.Cmnd):
+    cmndParamsMandatory = [ 'bxoId', ]
+    cmndParamsOptional = [ ]
+    cmndArgsLen = {'Min': 1, 'Max': 9999,}
+
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmnd(self,
+        interactive=False,        # Can also be called non-interactively
+        bxoId=None,         # or Cmnd-Input
+        argsList=[],         # or Args-Input
+    ):
+        cmndOutcome = self.getOpOutcome()
+        if interactive:
+            if not self.cmndLineValidate(outcome=cmndOutcome):
+                return cmndOutcome
+            effectiveArgsList = G.icmRunArgsGet().cmndArgs
+        else:
+            effectiveArgsList = argsList
+
+        callParamsDict = {'bxoId': bxoId, }
+        if not icm.cmndCallParamsValidate(callParamsDict, interactive, outcome=cmndOutcome):
+            return cmndOutcome
+        bxoId = callParamsDict['bxoId']
+
+        cmndArgsSpecDict = self.cmndArgsSpec()
+        if not self.cmndArgsValidate(effectiveArgsList, cmndArgsSpecDict, outcome=cmndOutcome):
+            return cmndOutcome
+####+END:
+
+        cmndArgs = self.cmndArgsGet("0&9999", cmndArgsSpecDict, effectiveArgsList)
+
+        gl = bxoGitlab_connect()
+
+        user = getUserForBxo(gl, bxoId)
+        if not user:
+            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+
+        # example code fragment:
+        
+        # bxeType = icm.FILE_ParamValueReadFrom(
+        #     parRoot=os.path.abspath(bxeDescRoot),
+        #     parName="bxeType"
+        # )
+
+        def processEachArg(eachArg,):
+
+            project = getRepoOfBxo(gl, bxoId, eachArg)
+            if not project:
+                icm.ANN_write("Missing Repo -- repoName={}".format(eachArg))
+                return project
+                    
+            project.delete()
+            
+        for eachArg in cmndArgs:
+            project = processEachArg(eachArg)                        
+
+        return cmndOutcome.set(
+            opError=icm.OpError.Success,
+            opResults=None,
+        )
+
+####+BEGIN: bx:icm:python:method :methodName "cmndArgsSpec" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndArgsSpec/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndArgsSpec(self):
+####+END:        
+        """
+***** Cmnd Args Specification  -- Each As Any.
+"""
+        cmndArgsSpecDict = icm.CmndArgsSpecDict()
+        cmndArgsSpecDict.argsDictAdd(
+            argPosition="0&9999",
+            argName="cmndArgs",
+            argChoices=[],
+            argDescription="List Of CmndArgs To Be Processed. Each As Any."
+        )
+
+        return cmndArgsSpecDict
+
+    
+####+BEGIN: bx:icm:python:method :methodName "cmndDocStr" :methodType "anyOrNone" :retType "bool" :deco "default" :argsList ""
+    """
+**  [[elisp:(org-cycle)][| ]] [[elisp:(org-show-subtree)][|=]] [[elisp:(show-children 10)][|V]] [[elisp:(bx:orgm:indirectBufOther)][|>]] [[elisp:(bx:orgm:indirectBufMain)][|I]] [[elisp:(blee:ppmm:org-mode-toggle)][|N]] [[elisp:(org-top-overview)][|O]] [[elisp:(progn (org-shifttab) (org-content))][|C]] [[elisp:(delete-other-windows)][|1]]  Method-anyOrNone :: /cmndDocStr/ retType=bool argsList=nil deco=default  [[elisp:(org-cycle)][| ]]
+"""
+    @icm.subjectToTracking(fnLoc=True, fnEntry=True, fnExit=True)
+    def cmndDocStr(self):
+####+END:        
+        return """
+***** TODO [[elisp:(org-cycle)][| *CmndDesc:* | ]]  Place holder for this commands doc string.
+"""
+    
 
 ####+BEGIN: bx:icm:python:cmnd:classHead :cmndName "repoSnapshot" :comment "" :parsMand "bxoId outFile" :parsOpt "" :argsMin "1" :argsMax "1" :asFunc "" :interactiveP ""
 """
@@ -1134,7 +1357,7 @@ def getRepoOfBxo(
             break
 
     if not project:
-        icm.EH_problem_usageError("Missing repoName={} for bxoId={}".format(repoName, bxoId))
+        icm.LOG_here("Missing repoName={} for bxoId={}".format(repoName, bxoId))
         
     return project
     
@@ -1161,7 +1384,7 @@ def getUserForBxo(
             break
 
     if not user:
-        icm.ANN_write("Missing user bxoId={}".format(bxoId))
+        icm.LOG_here("Missing user bxoId={}".format(bxoId))
         
     return user
 
