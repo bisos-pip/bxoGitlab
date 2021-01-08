@@ -1515,19 +1515,20 @@ def usgSitesSelectedDir_obtain(
 ):
 ####+END:
     """
-** 
+** /bisos/var/sites/selected/sys/config/
 """
-    if usgAcct:
-        usgAcctBase=os.path.expanduser("~" + usgAcct)
-    else:
-        usgAcctBase=os.path.expanduser("~")
+    # if usgAcct:
+    #     usgAcctBase=os.path.expanduser("~" + usgAcct)
+    # else:
+    #     usgAcctBase=os.path.expanduser("~")
         
-    usgSitesSelectedDir = os.path.join(
-        usgAcctBase,
-        "bisos/sites/selected"
-    )
+    # usgSitesSelectedDir = os.path.join(
+    #     usgAcctBase,
+    #     "bisos/sites/selected"
+    # )
+    #return usgSitesSelectedDir
 
-    return usgSitesSelectedDir
+    return "/bisos/var/sites/selected/sys/config"
 
 
 ####+BEGIN: bx:icm:python:section :title "Common/Generic Facilities -- Library Candidates"
