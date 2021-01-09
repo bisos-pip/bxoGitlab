@@ -1,1 +1,1 @@
-# bx-bases
+# bisos.bxoGitlab
