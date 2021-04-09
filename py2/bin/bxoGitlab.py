@@ -23,7 +23,7 @@ __icmName__ = "bxoGitlab"
 ####+END:
 
 ####+BEGIN: bx:global:timestamp:version-py :style "date"
-__version__ = "202010250031"
+__version__ = "202104095902"
 ####+END:
 
 ####+BEGIN: bx:global:icm:status-py :status "Production"
@@ -1515,20 +1515,19 @@ def usgSitesSelectedDir_obtain(
 ):
 ####+END:
     """
-** /bisos/var/sites/selected/sys/config/
+** 
 """
-    # if usgAcct:
-    #     usgAcctBase=os.path.expanduser("~" + usgAcct)
-    # else:
-    #     usgAcctBase=os.path.expanduser("~")
+    if usgAcct:
+        usgAcctBase=os.path.expanduser("~" + usgAcct)
+    else:
+        usgAcctBase=os.path.expanduser("~")
         
-    # usgSitesSelectedDir = os.path.join(
-    #     usgAcctBase,
-    #     "bisos/sites/selected"
-    # )
-    #return usgSitesSelectedDir
+    usgSitesSelectedDir = os.path.join(
+        usgAcctBase,
+        "bisos/sites/selected"
+    )
 
-    return "/bisos/var/sites/selected/sys/config"
+    return usgSitesSelectedDir
 
 
 ####+BEGIN: bx:icm:python:section :title "Common/Generic Facilities -- Library Candidates"
