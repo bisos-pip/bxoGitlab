@@ -1527,6 +1527,9 @@ def usgSitesSelectedDir_obtain(
         "bisos/sites/selected"
     )
 
+    if not os.path.exists(usgSitesSelectedDir):
+        usgSitesSelectedDir = "/bisos/var/sites/selected"
+
     return usgSitesSelectedDir
 
 
