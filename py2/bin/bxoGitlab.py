@@ -651,7 +651,7 @@ class acctList(icm.Cmnd):
 
         gl = bxoGitlab_connect()
 
-        users = gl.users.list()
+        users = gl.users.list(all=True)
 
         for eachUser in users:
             print(eachUser.username)
