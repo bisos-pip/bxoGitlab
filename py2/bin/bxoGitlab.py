@@ -705,7 +705,7 @@ class pubkeysList(icm.Cmnd):
         if not user:
             return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
 
-        keys = user.keys.list()
+        keys = user.keys.list(all=True)
     
         for eachKey in keys:
             print(eachKey.title)
@@ -929,7 +929,7 @@ class reposList(icm.Cmnd):
             return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
 
         # list all the projects
-        projects = gl.projects.list(sudo=bxoId)
+        projects = gl.projects.list(sudo=bxoId, all=True)
         for project in projects:
             if project.name != "Monitoring":
                 print(project.name)
@@ -1280,7 +1280,7 @@ def bxoKeyGet(
         return None
 
     key = None
-    keys = user.keys.list()
+    keys = user.keys.list(all=True)
     
     for eachKey in keys:
         if eachKey.title == keyName:
@@ -1317,7 +1317,7 @@ def keyUploadForBxo(
         return None
 
     key = None
-    keys = user.keys.list()
+    keys = user.keys.list(all=True)
     
     for eachKey in keys:
         if eachKey.title == keyName:
@@ -1350,7 +1350,7 @@ def getRepoOfBxo(
 ** Get the gitlab repo (project) based on specified repoName of bxoId.
 """
     project = None
-    projects = gitlab.projects.list(search=repoName, sudo=bxoId)
+    projects = gitlab.projects.list(search=repoName, sudo=bxoId, all=True)
     for eachProject in projects:
         if eachProject.name == repoName:
             project = eachProject
@@ -1376,7 +1376,7 @@ def getUserForBxo(
 """
 
     user = None
-    users = gitlab.users.list(search=bxoId)
+    users = gitlab.users.list(search=bxoId, all=True)
 
     for eachUser in users:
         if eachUser.username == bxoId:

@@ -33,11 +33,11 @@ Installation
 
 ::
 
-    sudo pip install bisos.bxoGitlab
+   sudo pip install bisos.bxoGitlab
 
 Usage
 =====
 
 ::
 
-    /usr/local/bin/bxoGitlab
+   /usr/local/bin/bxoGitlab
