@@ -4,15 +4,15 @@
 
 ####+END:
 
-####+BEGIN: bx:bsip:bash:seed-spec :types "seedFtoCommon.sh"
+####+BEGIN: bx:dblock:lsip:bash:seed-spec :types "seedFtoCommon.sh"
 SEED="
-*  /[dblock]/ /Seed/ :: [[file:/bisos/core/bsip/bin/seedFtoCommon.sh]] |
+*  /[dblock]/ /Seed/ :: [[file:/opt/public/osmt/bin/seedFtoCommon.sh]] |
 "
 FILE="
-*  /This File/ :: /bisos/git/auth/bxRepos/bisos-pip/bxoGitlab/ftoProc.sh
+*  /This File/ :: /bisos/git/auth/bxRepos/bisos-pip/bxoGitlab/py3/ftoProc.sh
 "
 if [ "${loadFiles}" == "" ] ; then
-    /bisos/core/bsip/bin/seedFtoCommon.sh -l $0 "$@"
+    /opt/public/osmt/bin/seedFtoCommon.sh -l $0 "$@"
     exit $?
 fi
 ####+END:
@@ -34,8 +34,6 @@ _CommentEnd_
 ####+BEGIN: bx:dblock:ploneProc:bash:leavesList :types ""
 # {{{ DBLOCK-leavesList
 leavesList="
-py2
-py3
 "
 # }}} DBLOCK-leavesList
 ####+END:
@@ -48,6 +46,10 @@ _CommentEnd_
 ####+BEGIN: bx:dblock:ploneProc:bash:nodesList :types ""
 # {{{ DBLOCK-nodesList
 nodesList="
+dist
+bin
+bisos.bxoGitlab.egg-info
+bisos
 "
 # }}} DBLOCK-nodesList
 ####+END:

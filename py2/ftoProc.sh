@@ -1,21 +1,18 @@
 #!/bin/bash
 
 ####+BEGIN: bx:dblock:bash:top-of-file :vc "cvs" partof: "bystar" :copyleft "halaal+minimal"
-typeset RcsId="$Id: ftoProc.sh,v 1.2 2018-01-01 20:46:08 lsipusr Exp $"
-# *CopyLeft*
-#  This is a Halaal Poly-Existential. See http://www.freeprotocols.org
 
 ####+END:
 
 ####+BEGIN: bx:dblock:lsip:bash:seed-spec :types "seedFtoCommon.sh"
 SEED="
-*  /[dblock]/ /Seed/ :: [[file:/opt/public/osmt/bin/seedFtoCommon.sh]] | 
+*  /[dblock]/ /Seed/ :: [[file:/opt/public/osmt/bin/seedFtoCommon.sh]] |
 "
 FILE="
-*  /This File/ :: /de/bx/nne/dev-py/pypi/pkgs/bisos/bx-bases/dev/ftoProc.sh 
+*  /This File/ :: /bisos/git/auth/bxRepos/bisos-pip/bxoGitlab/py2/ftoProc.sh
 "
 if [ "${loadFiles}" == "" ] ; then
-    /opt/public/osmt/bin/seedFtoCommon.sh -l $0 "$@" 
+    /opt/public/osmt/bin/seedFtoCommon.sh -l $0 "$@"
     exit $?
 fi
 ####+END:
@@ -49,7 +46,9 @@ _CommentEnd_
 ####+BEGIN: bx:dblock:ploneProc:bash:nodesList :types ""
 # {{{ DBLOCK-nodesList
 nodesList="
-bisos
+dist
+bisos2
+bisos2.bxoGitlab.egg-info
 bin
 "
 # }}} DBLOCK-nodesList

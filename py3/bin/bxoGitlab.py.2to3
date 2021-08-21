@@ -1,0 +1,72 @@
+RefactoringTool: Skipping optional fixer: buffer
+RefactoringTool: Skipping optional fixer: idioms
+RefactoringTool: Skipping optional fixer: set_literal
+RefactoringTool: Skipping optional fixer: ws_comma
+RefactoringTool: Refactored bxoGitlab/py3/bin/bxoGitlab.py
+RefactoringTool: Files that were modified:
+RefactoringTool: bxoGitlab/py3/bin/bxoGitlab.py
+--- bxoGitlab/py3/bin/bxoGitlab.py	(original)
++++ bxoGitlab/py3/bin/bxoGitlab.py	(refactored)
+@@ -167,7 +167,7 @@
+             argChoices.pop(0)
+             actions = argChoices
+         for each in actions:
+-            print each
++            print(each)
+             if interactive:
+                 #print( str( __doc__ ) )  # This is the Summary: from the top doc-string
+                 #version(interactive=True)
+@@ -501,7 +501,7 @@
+ 
+         if interactive:
+             #icm.ANN_write("{}".format(bxoRoot))
+-            print(user.username)
++            print((user.username))
+         
+         return cmndOutcome.set(
+             opError=icm.OpError.Success,
+@@ -654,7 +654,7 @@
+         users = gl.users.list(all=True)
+ 
+         for eachUser in users:
+-            print(eachUser.username)
++            print((eachUser.username))
+ 
+         return cmndOutcome.set(
+             opError=icm.OpError.Success,
+@@ -708,7 +708,7 @@
+         keys = user.keys.list(all=True)
+     
+         for eachKey in keys:
+-            print(eachKey.title)
++            print((eachKey.title))
+ 
+         return cmndOutcome.set(
+             opError=icm.OpError.Success,
+@@ -763,7 +763,7 @@
+             return cmndOutcome.set(opError=icm.OpError.Success, opResults=None,)
+ 
+         if interactive:
+-            print(key.key)
++            print((key.key))
+ 
+         return cmndOutcome.set(
+             opError=icm.OpError.Success,
+@@ -932,7 +932,7 @@
+         projects = gl.projects.list(sudo=bxoId, all=True)
+         for project in projects:
+             if project.name != "Monitoring":
+-                print(project.name)
++                print((project.name))
+                 #print(project.attributes)
+ 
+         return cmndOutcome.set(
+@@ -1015,7 +1015,7 @@
+                 sudo=bxoId,
+             )
+             icm.ANN_write("Created Repo -- repoName={}".format(project.name))            
+-            print(project.name)
++            print((project.name))
+             return project
+ 
+         for eachArg in cmndArgs:
