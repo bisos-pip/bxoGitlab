@@ -46,10 +46,8 @@ _CommentEnd_
 ####+BEGIN: bx:dblock:ploneProc:bash:nodesList :types ""
 # {{{ DBLOCK-nodesList
 nodesList="
-dist
-bisos2
-bisos2.bxoGitlab.egg-info
 bin
+bisos2
 "
 # }}} DBLOCK-nodesList
 ####+END:
