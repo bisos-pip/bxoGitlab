@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# Template File:  "/bisos/apps/defaults/begin/templates/purposed/pyModule/python/setup.py"
-
 ####+BEGIN: bx:dblock:global:file-insert :mode python :file "/bisos/apps/defaults/begin/templates/purposed/pyModule/python/commonSetupCode.py"
 
 import setuptools
@@ -39,40 +37,27 @@ def longDescription():
 
 ####+END:
 
-# :installed "0.22" --- Forces a specific version
-####+BEGIN: b:py3:pypi/nextVersion :increment 0.01
+####+BEGIN: b:py3:pypi/nextVersion :unused "0.99" :increment 0.01
 
-# ./pypiUploadVer does not exist -- pypiNextVer=0.20 -- installedVersion=0.16
 def pkgVersion():
-        return '0.16'  # Version Nu Of Installed Pkg
+    pypiUploadVerFile = pathlib.Path('./pypiUploadVer')
+    if pypiUploadVerFile.is_file() :
+        return '0.16'   # Version Nu To Be Uploaded
+    else:
+        return '0.15'  # Version Nu Of Installed Pkg
 
 ####+END:
 
-####+BEGIN: b:py3:pypi/requires :extras () :requirements "./requirements.txt"
+
+####+BEGIN: b:py3:pypi/requires :extras ("python-gitlab")
 
 requires = [
-'bisos',
-'bisos.b',
-'bisos.bxoGitlab',
-'bisos.common',
-'bisos.currents',
-'bisos.examples',
-'bisos.platform',
-'bisos.transit',
-'blee',
-'blee.icmPlayer',
-'certifi',
-'charset-normalizer',
-'enum34',
-'idna',
-'plumbum',
-'python-gitlab',
-'requests',
-'requests-toolbelt',
-'rpyc',
-'unisos.icm',
-'unisos.ucf',
-'urllib3',
+"blee",
+"blee.icmPlayer",
+"bisos",
+"bisos.b",
+"bisos.common",
+"python-gitlab",
 ]
 ####+END:
 
@@ -90,11 +75,10 @@ scripts = [
 data_files = [
 ]
 
-# :pkgName "--auto--"  --- results in use of name=pkgName(),
-####+BEGIN: b:py3:pypi/setupFuncArgs :pkgName ""
+####+BEGIN: bx:dblock:global:file-insert :mode python :file "/bisos/apps/defaults/begin/templates/purposed/pyModule/python/commonSetuptools.py"
 
 setuptools.setup(
-    name='bisos.bxoGitlab',
+    name=pkgName(),
     version=pkgVersion(),
     packages=setuptools.find_packages(),
     scripts=scripts,
