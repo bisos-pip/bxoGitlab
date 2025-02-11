@@ -43,7 +43,7 @@ def longDescription():
 # b:py3:pypi:setup/version Arguments  :forSys t :forPyPi t :constant "666"
 ####+BEGIN: b:py3:pypi:setup/version :comment "Auto Detected"
 
-# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.22 -- forSysVersion=0.16 -- constant=NA
+# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.23 -- forSysVersion=0.16 -- constant=NA
 def pkgVersion():
         return '0.16'
 
@@ -52,7 +52,7 @@ def pkgVersion():
 # b:py3:pypi:setup/requires :extras ; :requirements "requirements.txt" (bring here requirements.txt)
 ####+BEGIN: b:py3:pypi:setup/requires :extras () :requirements "requirements.txt"
 
-requires = [ 
+requires = [
 'bisos',
 'bisos.b',
 'bisos.bxoGitlab',
@@ -62,7 +62,7 @@ requires = [
 'bisos.platform',
 'bisos.transit',
 'blee',
-'blee.icmPlayer',
+'bisos.csPlayer',
 'certifi',
 'charset-normalizer',
 'enum34',
@@ -81,7 +81,7 @@ requires = [
 # b:py3:pypi:setup/scripts :comment
 ####+BEGIN: b:py3:pypi:setup/scripts :comment ""
 
-scripts = [ 
+scripts = [
 'bin/bxoGitlab.py',
 ]
 ####+END:
@@ -89,7 +89,7 @@ scripts = [
 # b:py3:pypi:setup/dataFiles :comment
 ####+BEGIN: b:py3:pypi:setup/dataFiles :comment "Instead of ./MANIFEST.in or in pyproject.toml"
 
-data_files = [ 
+data_files = [
 (' ',  ['lh-agpl3-LICENSE.txt', '_description.org', 'README.rst']),
 ]
 ####+END:
