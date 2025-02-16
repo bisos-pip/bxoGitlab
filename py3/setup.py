@@ -43,38 +43,20 @@ def longDescription():
 # b:py3:pypi:setup/version Arguments  :forSys t :forPyPi t :constant "666"
 ####+BEGIN: b:py3:pypi:setup/version :comment "Auto Detected"
 
-# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.23 -- forSysVersion=0.16 -- constant=NA
+# ./pypiUploadVer DID NOT exist -- forPypiVersion=0.25 -- forLocalVersion=0.16 -- constant=NA
 def pkgVersion():
         return '0.16'
 
 ####+END:
 
 # b:py3:pypi:setup/requires :extras ; :requirements "requirements.txt" (bring here requirements.txt)
-####+BEGIN: b:py3:pypi:setup/requires :extras () :requirements "requirements.txt"
+####+BEGIN: b:py3:pypi:setup/requires :extras ()
 
 requires = [
-'bisos',
-'bisos.b',
-'bisos.bxoGitlab',
-'bisos.common',
-'bisos.currents',
-'bisos.examples',
-'bisos.platform',
-'bisos.transit',
-'blee',
-'bisos.csPlayer',
-'certifi',
-'charset-normalizer',
-'enum34',
-'idna',
-'plumbum',
-'python-gitlab',
-'requests',
-'requests-toolbelt',
-'rpyc',
-'unisos.icm',
-'unisos.ucf',
-'urllib3',
+"bisos",
+"bisos.b",
+"bisos.common",
+"bisos.csPlayer",
 ]
 ####+END:
 
