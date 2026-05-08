@@ -414,7 +414,7 @@ class acctCreate(cs.Cmnd):
         bxeOid = b.fp.FileParamValueReadFrom(parRoot=bxeDescRoot, parName="bxeOid")
         if not bxeOid:
             b_io.eh.problem_usageError("Missing Path {}".format(bxeDescRoot))
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         # AdminContactEmail = b.fp.FileParamValueReadFrom(bxeDescRoot, parName='AdminContactEmail')
         AdminContactEmail = "git-" + bpoId + "@mohsen.1.banan.byname.net"
@@ -487,7 +487,7 @@ class acctVerify(cs.Cmnd):
 
         user = getUserForBxo(gl, bpoId)
         if not user:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         return cmndOutcome.set(
             opError=b.OpError.Success,
@@ -536,7 +536,7 @@ class acctDelete(cs.Cmnd):
 
         user = getUserForBxo(gl, bpoId)
         if not user:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         userName=user.username
 
@@ -636,7 +636,7 @@ class pubkeysList(cs.Cmnd):
 
         user = getUserForBxo(gl, bpoId)
         if not user:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         keys = user.keys.list(all=True)
 
@@ -738,7 +738,7 @@ class pubkeyUpload(cs.Cmnd):
 
         key = keyUploadForBxo(gitlab, bpoId, keyName, keyPath)
         if not key:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         if rtInv.outs:
             #b_io.ann.write("{}".format(bxoRoot))
@@ -792,7 +792,7 @@ class pubkeyDelete(cs.Cmnd):
 
         key = bxoKeyGet(gitlab, bpoId, keyName)
         if not key:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         keyTitle = key.title
 
@@ -847,7 +847,7 @@ class reposList(cs.Cmnd):
 
         user = getUserForBxo(gl, bpoId)
         if not user:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         # list all the projects
         projects = gl.projects.list(sudo=bpoId, all=True)
@@ -906,7 +906,7 @@ class reposCreate(cs.Cmnd):
 
         user = getUserForBxo(gl, bpoId)
         if not user:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         # example code fragment:
 
@@ -943,7 +943,7 @@ class reposCreate(cs.Cmnd):
             )
         else:
             return cmndOutcome.set(
-                opError=icm.OpError.Failure,
+                opError=b.OpError.Failure,
                 opResults="AlreadyExists",
             )
 
@@ -1017,7 +1017,7 @@ class reposDelete(cs.Cmnd):
 
         user = getUserForBxo(gl, bpoId)
         if not user:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         # example code fragment:
 
@@ -1113,7 +1113,7 @@ class repoSnapshot(cs.Cmnd):
 
         thisRepo = getRepoOfBxo(gitlab, bpoId, repoName)
         if not thisRepo:
-            return cmndOutcome.set(opError=icm.OpError.Failure, opResults=None,)
+            return cmndOutcome.set(opError=b.OpError.Failure, opResults=None,)
 
         tarFile = thisRepo.snapshot()
 
