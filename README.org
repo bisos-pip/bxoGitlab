@@ -63,9 +63,9 @@ instructions below for your own use.
 
 #+begin_src bash
 cat ~/.python-gitlab.cfg
-gitlab group get --id groupName/subGroup  # id: xxx, name: yyy
+gitlab group get --id groupName/subGroupName  # id: xxx, name: yyy
 gitlab group list --search groupName
-gitlab group-project list --group-id tmobile/ranautomation   # Produces only id: not names:
+gitlab group-project list --group-id groupName/subGroupName   # Produces only id: not names:
 #+end_src
 
 
